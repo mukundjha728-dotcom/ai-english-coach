@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT,
   display_name TEXT,
   proficiency_level TEXT DEFAULT 'beginner',
+  has_completed_onboarding BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -166,3 +167,6 @@ INSERT INTO roleplays (id, name, category, system_prompt_template) VALUES
     'Everyday Life',
     'You are an airline check-in agent at an international airport. Ask the user for their passport, where they are flying, and if they have checked luggage. Tell them about a minor issue (like a delayed flight or heavy bag) to test their English problem-solving.'
   );
+
+-- Phase 8: Onboarding Flag
+ALTER TABLE users ADD COLUMN IF NOT EXISTS has_completed_onboarding BOOLEAN DEFAULT FALSE;

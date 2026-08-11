@@ -114,3 +114,24 @@ export async function updateSessionSummary(sessionId: string, summary: string): 
     throw error;
   }
 }
+
+/**
+ * Gets basic stats for a user (total sessions).
+ */
+export async function getUserStats(userId: string): Promise<{ totalSessions: number }> {
+  try {
+    const { count, error } = await supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new Error(`Failed to fetch user stats: ${error.message}`);
+    }
+
+    return { totalSessions: count || 0 };
+  } catch (error) {
+    logger.error('Error in getUserStats', { userId, error: String(error) });
+    throw error;
+  }
+}

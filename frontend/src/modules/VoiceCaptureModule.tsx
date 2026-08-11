@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
@@ -12,17 +12,37 @@ export default function VoiceCaptureModule({ onAudioData, isAiSpeaking }: VoiceC
   const [isProcessing, setIsProcessing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // When AI stops speaking, user can talk. 
-  // (In a full real-time app, this might automatically resume listening, but here we require a click)
+  // Auto-send when speech recognition stops (e.g. user pauses)
+  const lastSentRef = useRef<string>('');
+
+  useEffect(() => {
+    const currentTranscript = transcript.trim();
+    if (!isListening && currentTranscript && !isProcessing && !isAiSpeaking && currentTranscript !== lastSentRef.current) {
+      setIsProcessing(true);
+      lastSentRef.current = currentTranscript;
+      onAudioData(transcript);
+      
+      // Fallback: If AI doesn't speak within 15 seconds, reset processing state
+      const fallbackTimer = setTimeout(() => {
+        setIsProcessing(false);
+      }, 15000);
+      
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [isListening, transcript, isProcessing, isAiSpeaking, onAudioData]);
+
+  // Clear processing state once AI starts speaking
+  useEffect(() => {
+    if (isAiSpeaking) {
+      setIsProcessing(false);
+    }
+  }, [isAiSpeaking]);
 
   const handleToggle = () => {
     if (isListening) {
       stopListening();
-      if (transcript.trim()) {
-        setIsProcessing(true);
-        onAudioData(transcript);
-      }
     } else {
+      lastSentRef.current = '';
       startListening();
       setIsProcessing(false);
     }

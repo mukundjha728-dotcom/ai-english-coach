@@ -21,7 +21,8 @@ export const logger = {
   },
 
   error(message: string, meta?: Record<string, unknown>): void {
-    console.error(formatMessage('error', message, meta));
+    const formatted = formatMessage('error', message, meta);
+    console.error(formatted);
   },
 
   debug(message: string, meta?: Record<string, unknown>): void {

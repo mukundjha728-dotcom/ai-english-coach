@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, ArrowLeft, Loader2, Theater } from 'lucide-react';
 import { getRoleplays, startConversation } from '../lib/api';

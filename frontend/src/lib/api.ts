@@ -132,3 +132,20 @@ export async function getDailyChallenge(): Promise<{ challenge: { topic: string,
   const response = await fetchWithAuth('/api/conversation/daily-challenge');
   return response.json();
 }
+
+/**
+ * Marks the user's onboarding as completed.
+ */
+export async function completeOnboarding(): Promise<void> {
+  await fetchWithAuth('/api/auth/onboarding', {
+    method: 'POST',
+  });
+}
+
+/**
+ * Retrieves user stats for the dashboard.
+ */
+export async function getUserStats(): Promise<{ totalSessions: number; proficiencyLevel: string }> {
+  const response = await fetchWithAuth('/api/auth/stats');
+  return response.json();
+}

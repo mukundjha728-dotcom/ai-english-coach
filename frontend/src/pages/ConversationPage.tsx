@@ -21,6 +21,7 @@ export default function ConversationPage() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [levelUpToast, setLevelUpToast] = useState<string | null>(null);
   const [vocabSuggestion, setVocabSuggestion] = useState<{ overusedWord: string; suggestions: string[]; context: string } | null>(null);
+  const [connecting, setConnecting] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,12 +37,13 @@ export default function ConversationPage() {
 
     websocket.onopen = () => {
       console.log('Connected to conversation WS');
+      setConnecting(false);
     };
 
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       
-      if (data.type === 'response') {
+      if (data.type === 'ai_response') {
         setMessages((prev) => [
           ...prev, 
           { id: Date.now().toString(), role: 'assistant', content: data.text }
@@ -56,6 +58,7 @@ export default function ConversationPage() {
         setTimeout(() => setVocabSuggestion(null), 8000);
       } else if (data.type === 'error') {
         console.error('WS Error:', data.error);
+        setConnecting(false);
         alert(`Error: ${data.error}`);
       }
     };
@@ -76,7 +79,7 @@ export default function ConversationPage() {
     
     // Send via WebSocket
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'audio_text', text }));
+      ws.send(JSON.stringify({ type: 'user_message', text }));
     }
   };
 
@@ -154,7 +157,15 @@ export default function ConversationPage() {
       {/* Transcript Area */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
         <div className="max-w-3xl mx-auto space-y-6 flex flex-col justify-end min-h-full pb-32">
-          {messages.length === 0 && (
+          {connecting ? (
+            <div className="text-center text-slate-500 dark:text-slate-400 py-12 flex flex-col items-center">
+              <div className="w-16 h-16 bg-brand-100 dark:bg-brand-900/30 text-brand-500 rounded-2xl flex items-center justify-center mb-4">
+                <div className="w-8 h-8 border-4 border-brand-500/30 border-t-brand-500 rounded-full animate-spin"></div>
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Connecting to AI Coach...</h3>
+              <p>Warming up the servers.</p>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="text-center text-slate-500 dark:text-slate-400 py-12">
               <div className="w-16 h-16 bg-brand-100 dark:bg-brand-900/30 text-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Mic size={32} />
@@ -162,7 +173,7 @@ export default function ConversationPage() {
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Ready when you are</h3>
               <p>Tap the microphone below and start speaking.</p>
             </div>
-          )}
+          ) : null}
           
           {messages.map((msg) => (
             <div 

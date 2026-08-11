@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadDocument, getDocuments, startConversation } from '../lib/api';
-import { ArrowLeft, Briefcase, FileText, Upload, Plus, Loader2, Sparkles, User, FileSearch } from 'lucide-react';
+import { ArrowLeft, Briefcase, FileText, Plus, Loader2, Sparkles, User, FileSearch } from 'lucide-react';
 
 interface DocumentRecord {
   id: string;

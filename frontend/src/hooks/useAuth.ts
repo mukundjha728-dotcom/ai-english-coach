@@ -22,11 +22,17 @@ export function useAuth() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session) {
-        fetchProfile();
+        try {
+          const sessionRes = await validateSession();
+          setProfile(sessionRes.user);
+        } catch (e) {
+          console.error('Failed to fetch profile on auth change', e);
+          setLoading(false);
+        }
       } else {
         setProfile(null);
         setLoading(false);

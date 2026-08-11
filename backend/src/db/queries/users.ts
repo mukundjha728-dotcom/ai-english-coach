@@ -7,6 +7,7 @@ export interface UserRecord {
   email: string | null;
   display_name: string | null;
   proficiency_level: string;
+  has_completed_onboarding: boolean;
   created_at: string;
 }
 
@@ -82,6 +83,25 @@ export async function updateProficiencyLevel(userId: string, level: string): Pro
     }
   } catch (error) {
     logger.error('Error in updateProficiencyLevel', { userId, level, error: String(error) });
+    throw error;
+  }
+}
+
+/**
+ * Marks the user's onboarding as completed.
+ */
+export async function completeOnboarding(userId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ has_completed_onboarding: true })
+      .eq('id', userId);
+
+    if (error) {
+      throw new Error(`Failed to complete onboarding: ${error.message}`);
+    }
+  } catch (error) {
+    logger.error('Error in completeOnboarding', { userId, error: String(error) });
     throw error;
   }
 }

@@ -15,9 +15,20 @@ export function useSpeechSynthesis() {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
     
-    // Optional: try to find a better sounding voice
+    // Try to find a male English voice
     const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Natural'));
+    const maleNames = ['david', 'mark', 'daniel', 'matthew', 'brian', 'alex', 'fred', 'aaron', 'arthur', 'male', 'guy'];
+    
+    let preferredVoice = voices.find(v => 
+      v.lang.startsWith('en') && 
+      maleNames.some(name => v.name.toLowerCase().includes(name))
+    );
+
+    // Fallback to any English voice if no male voice is found
+    if (!preferredVoice) {
+      preferredVoice = voices.find(v => v.lang.startsWith('en'));
+    }
+
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }

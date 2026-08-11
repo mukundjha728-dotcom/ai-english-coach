@@ -3,11 +3,11 @@ import type { LLMProvider, LLMRequest, LLMResponse } from '../LLMClient.js';
 import { RateLimitError } from '../LLMClient.js';
 import { logger } from '../../utils/logger.js';
 
-const MODEL_NAME = 'gemini-1.5-flash';
+const MODEL_NAME = 'gemini-flash-latest';
 
 /**
  * Gemini provider — implements LLMProvider using Google's Generative AI SDK.
- * Uses gemini-1.5-flash for fast, free-tier conversation responses.
+ * Uses gemini-flash-latest for fast, free-tier conversation responses.
  */
 export class GeminiProvider implements LLMProvider {
   public readonly name = 'gemini';
@@ -62,7 +62,7 @@ export class GeminiProvider implements LLMProvider {
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const model = this.client.getGenerativeModel({ model: 'text-embedding-004' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-embedding-2' });
       const result = await model.embedContent(text);
       return result.embedding.values;
     } catch (error: unknown) {

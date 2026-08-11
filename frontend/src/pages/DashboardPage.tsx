@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { startConversation, getDailyChallenge } from '../lib/api';
-import { LogOut, Mic, BookOpen, UserCheck, Trophy, Sparkles } from 'lucide-react';
+import { startConversation, getDailyChallenge, getUserStats } from '../lib/api';
+import { LogOut, Mic, BookOpen, UserCheck, Trophy, Sparkles, Activity } from 'lucide-react';
 import { useEffect } from 'react';
+import { OnboardingModal } from '../components/OnboardingModal';
 
 export default function DashboardPage() {
   const { profile, signOut } = useAuth();
@@ -11,9 +12,11 @@ export default function DashboardPage() {
   const [starting, setStarting] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState<any>(null);
   const [startingChallenge, setStartingChallenge] = useState(false);
+  const [stats, setStats] = useState<{ totalSessions: number } | null>(null);
 
   useEffect(() => {
     getDailyChallenge().then(res => setDailyChallenge(res.challenge)).catch(console.error);
+    getUserStats().then(res => setStats(res)).catch(console.error);
   }, []);
 
   const handleStartConversation = async () => {
@@ -52,6 +55,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-12 relative overflow-hidden">
+      {profile && !profile.hasCompletedOnboarding && (
+        <OnboardingModal onComplete={() => window.location.reload()} />
+      )}
+      
       {/* Dynamic Background */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-brand-500/10 to-transparent pointer-events-none"></div>
 
@@ -72,6 +79,20 @@ export default function DashboardPage() {
             <span className="hidden sm:inline">Sign Out</span>
           </button>
         </header>
+
+        {stats && (
+          <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4">
+              <div className="bg-brand-100 dark:bg-brand-900/50 p-3 rounded-xl text-brand-600 dark:text-brand-400">
+                <Activity size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Sessions</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalSessions}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Primary CTA */}
