@@ -11,7 +11,7 @@ interface ConversationMessage {
 }
 
 interface ServerMessage {
-  type: 'ai_response' | 'error' | 'connected';
+  type: 'ai_response' | 'error' | 'connected' | 'level_updated' | 'vocabulary_suggestion';
   text?: string;
   sessionId?: string;
 }
@@ -73,7 +73,10 @@ export function setupWebSocket(server: Server): void {
             authId,
             {
               onLevelUpdated: (newLevel) => {
-                sendMessage(ws, { type: 'level_updated', text: newLevel } as any);
+                sendMessage(ws, { type: 'level_updated', text: newLevel });
+              },
+              onVocabularySuggestion: (suggestion) => {
+                sendMessage(ws, { type: 'vocabulary_suggestion', text: JSON.stringify(suggestion) });
               }
             }
           );

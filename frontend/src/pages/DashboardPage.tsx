@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { startConversation } from '../lib/api';
+import { startConversation, getDailyChallenge } from '../lib/api';
 import { LogOut, Mic, BookOpen, UserCheck, Trophy, Sparkles } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function DashboardPage() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
+  const [dailyChallenge, setDailyChallenge] = useState<any>(null);
+  const [startingChallenge, setStartingChallenge] = useState(false);
+
+  useEffect(() => {
+    getDailyChallenge().then(res => setDailyChallenge(res.challenge)).catch(console.error);
+  }, []);
 
   const handleStartConversation = async () => {
     try {
@@ -19,6 +26,27 @@ export default function DashboardPage() {
       alert('Failed to start conversation. Check console for details.');
     } finally {
       setStarting(false);
+    }
+  };
+
+  const handleStartDailyChallenge = async () => {
+    if (!dailyChallenge) return;
+    try {
+      setStartingChallenge(true);
+      const { sessionId } = await startConversation(
+        'daily_challenge',
+        undefined, 
+        undefined, 
+        undefined, 
+        undefined, 
+        dailyChallenge.topic
+      );
+      navigate(`/conversation/${sessionId}`);
+    } catch (error) {
+      console.error('Failed to start challenge', error);
+      alert('Failed to start daily challenge.');
+    } finally {
+      setStartingChallenge(false);
     }
   };
 
@@ -97,35 +125,56 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="glass-panel p-8 rounded-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-slate-900/5 dark:bg-black/20"></div>
-            <div className="relative z-10 opacity-70">
-              <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mb-6">
-                <UserCheck size={28} />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Interview Simulator</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-                Mock interviews based on your resume.
-              </p>
-              <span className="px-3 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full text-xs font-bold uppercase tracking-wider">
-                Coming Soon
-              </span>
+          <div 
+            className="premium-card p-8 cursor-pointer group" 
+            onClick={() => navigate('/roleplays')}
+          >
+            <div className="w-14 h-14 rounded-2xl bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <UserCheck size={28} />
             </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Roleplay Scenarios</h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+              Practice real-world situations like interviews, ordering food, and more.
+            </p>
           </div>
 
-          <div className="glass-panel p-8 rounded-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-slate-900/5 dark:bg-black/20"></div>
-            <div className="relative z-10 opacity-70">
-              <div className="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mb-6">
+          <div 
+            className="premium-card p-8 cursor-pointer group" 
+            onClick={() => navigate('/interview-simulator')}
+          >
+            <div className="w-14 h-14 rounded-2xl bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <UserCheck size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Interview Simulator</h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+              Upload your resume and a JD to practice tailored mock interviews with AI.
+            </p>
+          </div>
+
+          <div className="premium-card p-8 rounded-2xl relative overflow-hidden group cursor-pointer" onClick={handleStartDailyChallenge}>
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/5 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Trophy size={28} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Daily Challenge</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-                Quick 2-minute speaking tasks to keep your streak alive.
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Daily Challenge</h3>
+                {dailyChallenge && (
+                  <span className="px-2 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-md text-xs font-bold uppercase tracking-wider">
+                    {dailyChallenge.duration}
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4 min-h-[3rem]">
+                {dailyChallenge ? dailyChallenge.topic : 'Loading challenge...'}
               </p>
-              <span className="px-3 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full text-xs font-bold uppercase tracking-wider">
-                Coming Soon
-              </span>
+              
+              <button 
+                disabled={startingChallenge || !dailyChallenge}
+                className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all disabled:opacity-50"
+              >
+                {startingChallenge ? 'Starting...' : 'Start Challenge'} &rarr;
+              </button>
             </div>
           </div>
         </div>

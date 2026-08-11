@@ -1,11 +1,14 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../utils/logger.js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL?.trim() || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_KEY?.trim() || '';
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  logger.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment variables');
+const isUrlValid = supabaseUrl.startsWith('http://') || supabaseUrl.startsWith('https://');
+const isKeyValid = supabaseServiceRoleKey.length > 20 && !supabaseServiceRoleKey.includes('YOUR_');
+
+if (!isUrlValid || !isKeyValid) {
+  logger.error('Missing or invalid SUPABASE_URL / SUPABASE_SERVICE_KEY in environment variables');
   process.exit(1);
 }
 

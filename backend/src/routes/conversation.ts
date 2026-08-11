@@ -6,12 +6,18 @@ import { createSession } from '../db/queries/sessions.js';
 import { findOrCreateUser } from '../db/queries/users.js';
 import { generateSessionScorecard } from '../services/scorecardGenerator.js';
 import { getScorecardBySessionId } from '../db/queries/scorecards.js';
+import { getRoleplays } from '../db/queries/roleplays.js';
 import { logger } from '../utils/logger.js';
 
 export const conversationRouter = Router();
 
 const startConversationSchema = z.object({
   sessionType: z.string().default('conversation'),
+  roleplayId: z.string().uuid().optional(),
+  documentId: z.string().uuid().optional(),
+  resumeId: z.string().uuid().optional(),
+  jdId: z.string().uuid().optional(),
+  challengePrompt: z.string().optional(),
 });
 
 /**
@@ -40,7 +46,15 @@ conversationRouter.post(
       const user = await findOrCreateUser(req.user.id, req.user.email);
 
       // Create session
-      const session = await createSession(user.id, parsed.data.sessionType);
+      const session = await createSession(
+        user.id, 
+        parsed.data.sessionType, 
+        parsed.data.documentId, 
+        parsed.data.roleplayId, 
+        parsed.data.resumeId, 
+        parsed.data.jdId, 
+        parsed.data.challengePrompt
+      );
 
       res.json({
         sessionId: session.id,
@@ -52,6 +66,19 @@ conversationRouter.post(
     }
   }
 );
+
+/**
+ * GET /api/conversation/roleplays
+ * Returns a list of available roleplay scenarios
+ */
+conversationRouter.get('/roleplays', authMiddleware, async (req, res) => {
+  try {
+    const roleplays = await getRoleplays();
+    res.json({ roleplays });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch roleplays' });
+  }
+});
 
 // POST /api/conversation/:sessionId/scorecard
 conversationRouter.post('/:sessionId/scorecard', authMiddleware, async (req: AuthenticatedRequest, res) => {
@@ -91,4 +118,14 @@ conversationRouter.get('/:sessionId/scorecard', authMiddleware, async (req, res)
  */
 conversationRouter.get('/scores/:sessionId', authMiddleware, async (_req, res) => {
   res.json({ scores: null, message: 'Scoring not yet implemented' });
+});
+
+/**
+ * GET /api/conversation/daily-challenge
+ * Returns the daily challenge for today
+ */
+conversationRouter.get('/daily-challenge', authMiddleware, async (_req, res) => {
+  // Use dynamic import so it works even if we haven't restarted the server yet
+  const { getDailyChallenge } = await import('../services/dailyChallengeGenerator.js');
+  res.json({ challenge: getDailyChallenge() });
 });

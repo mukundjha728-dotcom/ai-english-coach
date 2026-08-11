@@ -33,13 +33,13 @@ async function fetchWithAuth(path: string, options: RequestInit = {}): Promise<R
 /**
  * Creates a new conversation session on the backend.
  */
-export async function startConversation(sessionType: string = 'conversation', documentId?: string): Promise<{
+export async function startConversation(sessionType: string = 'conversation', documentId?: string, roleplayId?: string, resumeId?: string, jdId?: string, challengePrompt?: string): Promise<{
   sessionId: string;
   wsUrl: string;
 }> {
   const response = await fetchWithAuth('/api/conversation/start', {
     method: 'POST',
-    body: JSON.stringify({ sessionType, documentId }),
+    body: JSON.stringify({ sessionType, documentId, roleplayId, resumeId, jdId, challengePrompt }),
   });
 
   return response.json();
@@ -114,5 +114,21 @@ export async function generateScorecard(sessionId: string): Promise<{ scorecard:
  */
 export async function getScorecard(sessionId: string): Promise<{ scorecard: any }> {
   const response = await fetchWithAuth(`/api/conversation/${sessionId}/scorecard`);
+  return response.json();
+}
+
+/**
+ * Retrieves the list of available roleplays.
+ */
+export async function getRoleplays(): Promise<{ roleplays: any[] }> {
+  const response = await fetchWithAuth('/api/conversation/roleplays');
+  return response.json();
+}
+
+/**
+ * Retrieves today's daily challenge.
+ */
+export async function getDailyChallenge(): Promise<{ challenge: { topic: string, type: string, duration: string } }> {
+  const response = await fetchWithAuth('/api/conversation/daily-challenge');
   return response.json();
 }

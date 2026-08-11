@@ -1,5 +1,6 @@
-// @ts-ignore - pdf-parse types are sometimes tricky with ESM
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import { llmClient } from '../llm/LLMClient.js';
 import { createDocument, insertDocumentChunks, DocumentChunkRecord } from '../db/queries/documents.js';
 import { logger } from '../utils/logger.js';

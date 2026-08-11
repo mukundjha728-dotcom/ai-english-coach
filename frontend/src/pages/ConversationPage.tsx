@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import VoiceCaptureModule from '../modules/VoiceCaptureModule';
 import { useAuth } from '../hooks/useAuth';
-import { ArrowLeft, CheckCircle2, Mic } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Mic, Lightbulb } from 'lucide-react';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
 interface Message {
@@ -20,6 +20,7 @@ export default function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [levelUpToast, setLevelUpToast] = useState<string | null>(null);
+  const [vocabSuggestion, setVocabSuggestion] = useState<{ overusedWord: string; suggestions: string[]; context: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,8 +48,12 @@ export default function ConversationPage() {
         ]);
         speak(data.text);
       } else if (data.type === 'level_updated') {
-        setLevelUpToast(data.level);
+        setLevelUpToast(data.level || data.text);
         setTimeout(() => setLevelUpToast(null), 5000);
+      } else if (data.type === 'vocabulary_suggestion') {
+        const suggestion = JSON.parse(data.text);
+        setVocabSuggestion(suggestion);
+        setTimeout(() => setVocabSuggestion(null), 8000);
       } else if (data.type === 'error') {
         console.error('WS Error:', data.error);
         alert(`Error: ${data.error}`);
@@ -91,6 +96,37 @@ export default function ConversationPage() {
             <span className="font-semibold text-emerald-700 dark:text-emerald-400">
               Level Up! You are now {levelUpToast}!
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Vocabulary Suggestion Toast */}
+      {vocabSuggestion && (
+        <div className="fixed top-20 right-6 z-50 animate-in fade-in slide-in-from-right-8 duration-500 max-w-sm">
+          <div className="glass-panel p-4 rounded-2xl border-amber-500/30 bg-amber-50 dark:bg-amber-900/20 shadow-lg shadow-amber-500/10">
+            <div className="flex gap-3">
+              <div className="text-amber-500 flex-shrink-0 mt-1">
+                <Lightbulb size={24} />
+              </div>
+              <div>
+                <h4 className="font-bold text-amber-700 dark:text-amber-400 mb-1">
+                  Vocabulary Tip
+                </h4>
+                <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">
+                  You've used <strong>"{vocabSuggestion.overusedWord}"</strong> a lot. Try these instead:
+                </p>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {vocabSuggestion.suggestions.map((s, i) => (
+                    <span key={i} className="px-2 py-1 bg-white dark:bg-slate-800 rounded-md text-xs font-semibold border border-amber-200 dark:border-amber-700/50">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                  {vocabSuggestion.context}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

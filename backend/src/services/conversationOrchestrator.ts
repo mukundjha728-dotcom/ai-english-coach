@@ -3,9 +3,11 @@ import { buildConversationSystemPrompt, buildConversationPrompt } from '../llm/p
 import { addMessage, getSessionMessages } from '../db/queries/messages.js';
 import { findOrCreateUser } from '../db/queries/users.js';
 import { getSession } from '../db/queries/sessions.js';
-import { findSimilarChunks } from '../db/queries/documents.js';
+import { getRoleplayById } from '../db/queries/roleplays.js';
+import { findSimilarChunks, getDocumentText } from '../db/queries/documents.js';
 import { detectAndUpdateProficiency } from './proficiencyDetector.js';
 import { summarizeSession } from './sessionSummarizer.js';
+import { detectRepetitiveWords } from './vocabularyTracker.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -27,6 +29,7 @@ export async function handleConversationTurn(
   authId: string,
   options?: {
     onLevelUpdated?: (level: string) => void;
+    onVocabularySuggestion?: (suggestion: any) => void;
   }
 ): Promise<string> {
   try {
@@ -66,8 +69,47 @@ export async function handleConversationTurn(
     }
 
     // 5. Build the full prompt
-    const systemPrompt = buildConversationSystemPrompt(proficiencyLevel);
+    let systemPrompt = buildConversationSystemPrompt(proficiencyLevel);
+    
+    // Override with roleplay system prompt if session has a roleplay_id
+    if (session?.roleplay_id) {
+      const roleplay = await getRoleplayById(session.roleplay_id);
+      if (roleplay) {
+        systemPrompt = `${roleplay.system_prompt_template}\n\nThe user's current English proficiency level is: ${proficiencyLevel}. Keep your vocabulary appropriate for this level. Correct major mistakes kindly.`;
+      }
+    }
+
+    // Override for Interview mode
+    if (session?.session_type === 'interview') {
+      let resumeContext = '';
+      let jdContext = '';
+      if (session.resume_id) {
+        resumeContext = await getDocumentText(session.resume_id);
+      }
+      if (session.jd_id) {
+        jdContext = await getDocumentText(session.jd_id);
+      }
+      
+      systemPrompt = `You are an expert hiring manager conducting a mock interview with the user.
+You will assess their technical skills based on the job description, their behavioral fit, and their English communication skills.
+Be professional, ask probing questions, and evaluate their responses. Wait for their answers before asking the next question.
+Do not provide answers for them. Correct major English mistakes subtly if they struggle.
+
+[Job Description Context]:
+${jdContext || 'No job description provided.'}
+
+[Candidate Resume Context]:
+${resumeContext || 'No resume provided.'}
+
+The user's current English proficiency level is: ${proficiencyLevel}.`;
+    }
+
     const fullPrompt = buildConversationPrompt(systemPrompt + ragContext, history, userText);
+    
+    // Inject challenge prompt if daily challenge
+    if (session?.session_type === 'daily_challenge' && session.challenge_prompt) {
+      systemPrompt += `\n\n[Daily Challenge Topic]: ${session.challenge_prompt}\nPlease initiate and evaluate the user based on this challenge.`;
+    }
 
     // 6. Call LLM via the abstracted client
     const response = await llmClient.generate({
@@ -98,6 +140,15 @@ export async function handleConversationTurn(
     // Run summarization every ~10 turns (20 messages) for long-term memory
     if (recentMessages.length >= 20 && recentMessages.length % 10 === 0) {
       summarizeSession(sessionId).catch(e => logger.error('Async summarization failed', { error: String(e) }));
+    }
+
+    // Vocabulary tracking every ~4 user turns (8 messages)
+    if (recentMessages.length >= 8 && recentMessages.length % 8 === 0) {
+      detectRepetitiveWords(recentMessages).then(suggestion => {
+        if (suggestion && options?.onVocabularySuggestion) {
+          options.onVocabularySuggestion(suggestion);
+        }
+      }).catch(e => logger.error('Async vocab tracking failed', { error: String(e) }));
     }
 
     return response.text;

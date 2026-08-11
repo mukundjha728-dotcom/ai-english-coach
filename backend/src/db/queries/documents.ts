@@ -71,3 +71,17 @@ export async function findSimilarChunks(documentId: string, queryEmbedding: numb
 
   return data;
 }
+
+export async function getDocumentText(documentId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('document_chunks')
+    .select('content')
+    .eq('document_id', documentId);
+
+  if (error) {
+    logger.error('Error getting document text', { error: String(error) });
+    throw new Error('Failed to get document text');
+  }
+
+  return data.map(chunk => chunk.content).join('\n\n');
+}

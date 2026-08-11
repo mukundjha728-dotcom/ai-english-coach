@@ -106,7 +106,7 @@ Conversation History:\n`;
 /**
  * Builds the prompt for generating a structured scorecard at the end of a session.
  */
-export function buildScorecardPrompt(conversationHistory: Array<{ role: string; content: string }>): string {
+export function buildScorecardPrompt(conversationHistory: Array<{ role: string; content: string }>, sessionType: string = 'conversation'): string {
   let prompt = `You are an expert English language evaluator. Evaluate the user's performance in the following conversation.
 Generate a structured JSON scorecard.
 
@@ -118,8 +118,13 @@ The JSON MUST exactly match this schema:
   "strengths": string[] (2-3 items highlighting what they did well),
   "areas_for_improvement": string[] (2-3 items highlighting what they need to work on)
 }
+`;
 
-Conversation Transcript:\n`;
+  if (sessionType === 'interview') {
+    prompt += `Since this was an interview simulation, please also evaluate their technical accuracy, confidence, and how well they answered the questions within the strengths and areas_for_improvement fields.\n\n`;
+  }
+
+  prompt += `Conversation Transcript:\n`;
 
   for (const msg of conversationHistory) {
     const label = msg.role === 'user' ? 'User' : 'Coach';

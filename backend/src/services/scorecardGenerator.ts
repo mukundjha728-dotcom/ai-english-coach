@@ -39,7 +39,7 @@ export async function generateSessionScorecard(sessionId: string, authId: string
     }
 
     const history = messages.map(msg => ({ role: msg.role, content: msg.content }));
-    const prompt = buildScorecardPrompt(history);
+    const prompt = buildScorecardPrompt(history, session.session_type);
 
     // Call LLM using JSON mode if available, or just regular generation and parsing
     const response = await llmClient.generate({

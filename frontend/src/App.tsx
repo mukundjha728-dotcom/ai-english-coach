@@ -5,6 +5,8 @@ import DashboardPage from './pages/DashboardPage';
 import ConversationPage from './pages/ConversationPage';
 import ScorecardPage from './pages/ScorecardPage';
 import DocumentTrainerPage from './pages/DocumentTrainerPage';
+import RoleplaySelectorPage from './pages/RoleplaySelectorPage';
+import InterviewSimulatorPage from './pages/InterviewSimulatorPage';
 import { useAuth } from './hooks/useAuth';
 
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -79,6 +81,18 @@ export default function App() {
         <Route path="/document-trainer" element={
           <ProtectedRoute>
             <DocumentTrainerPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/roleplays" element={
+          <ProtectedRoute>
+            <RoleplaySelectorPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/interview-simulator" element={
+          <ProtectedRoute>
+            <InterviewSimulatorPage />
           </ProtectedRoute>
         } />
         

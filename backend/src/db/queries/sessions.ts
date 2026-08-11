@@ -5,6 +5,10 @@ export interface SessionRecord {
   id: string;
   user_id: string;
   document_id?: string | null;
+  roleplay_id?: string | null;
+  resume_id?: string | null;
+  jd_id?: string | null;
+  challenge_prompt?: string | null;
   session_type: string;
   summary: string | null;
   started_at: string;
@@ -14,11 +18,23 @@ export interface SessionRecord {
 /**
  * Creates a new active session for the user.
  */
-export async function createSession(userId: string, sessionType: string = 'conversation', documentId?: string): Promise<SessionRecord> {
+export async function createSession(userId: string, sessionType: string = 'conversation', documentId?: string, roleplayId?: string, resumeId?: string, jdId?: string, challengePrompt?: string): Promise<SessionRecord> {
   try {
     const payload: any = { user_id: userId, session_type: sessionType };
     if (documentId) {
       payload.document_id = documentId;
+    }
+    if (roleplayId) {
+      payload.roleplay_id = roleplayId;
+    }
+    if (resumeId) {
+      payload.resume_id = resumeId;
+    }
+    if (jdId) {
+      payload.jd_id = jdId;
+    }
+    if (challengePrompt) {
+      payload.challenge_prompt = challengePrompt;
     }
 
     const { data, error } = await supabase
