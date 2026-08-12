@@ -135,3 +135,29 @@ export async function getUserStats(userId: string): Promise<{ totalSessions: num
     throw error;
   }
 }
+
+/**
+ * Fetches summaries of previous sessions for a user to provide long-term memory to the LLM.
+ */
+export async function getPreviousSessionSummaries(userId: string, currentSessionId: string, limit: number = 3): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('summary')
+      .eq('user_id', userId)
+      .neq('id', currentSessionId)
+      .not('summary', 'is', null)
+      .order('started_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      logger.warn('Failed to fetch previous session summaries', { error: error.message });
+      return [];
+    }
+
+    return data.map(d => d.summary).filter(Boolean) as string[];
+  } catch (error) {
+    logger.error('Error in getPreviousSessionSummaries', { userId, error: String(error) });
+    return [];
+  }
+}

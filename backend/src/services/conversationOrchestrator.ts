@@ -2,7 +2,7 @@ import { llmClient } from '../llm/LLMClient.js';
 import { buildConversationSystemPrompt, buildConversationPrompt } from '../llm/prompts/conversation.js';
 import { addMessage, getSessionMessages } from '../db/queries/messages.js';
 import { findOrCreateUser } from '../db/queries/users.js';
-import { getSession } from '../db/queries/sessions.js';
+import { getSession, getPreviousSessionSummaries } from '../db/queries/sessions.js';
 import { getRoleplayById } from '../db/queries/roleplays.js';
 import { findSimilarChunks, getDocumentText } from '../db/queries/documents.js';
 import { detectAndUpdateProficiency } from './proficiencyDetector.js';
@@ -70,6 +70,14 @@ export async function handleConversationTurn(
 
     // 5. Build the full prompt
     let systemPrompt = buildConversationSystemPrompt(proficiencyLevel);
+    
+    // Inject long-term memory (past session summaries)
+    if (session?.session_type === 'conversation' && recentMessages.length <= 6) {
+      const pastSummaries = await getPreviousSessionSummaries(user.id, sessionId);
+      if (pastSummaries.length > 0) {
+        systemPrompt += `\n\n[Long-term Memory - Previous Sessions]:\n${pastSummaries.map((s, i) => `Past Session ${i + 1}: ${s}`).join('\n')}\n\nYou must remember these past interactions. Acknowledge their return gracefully and continue the coaching where you left off if applicable, or ask how they have been since last time. Do not explicitly say "I see in my memory", act natural.`;
+      }
+    }
     
     // Override with roleplay system prompt if session has a roleplay_id
     if (session?.roleplay_id) {
